@@ -10,6 +10,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.client.RestTemplate;
 
+import com.netflix.hystrix.contrib.javanica.annotation.HystrixCommand;
+
 @Controller
 public class FastPassController {
 	
@@ -22,6 +24,7 @@ public class FastPassController {
 		return builder.build();
 	}
 	
+	@HystrixCommand(fallbackMethod="getFastPassCustomerDetailsFallback")
 	@RequestMapping(path="/customerdetails", params={"fastpassid"})
 	public String getFastPassCustomerDetails(@RequestParam String fastpassid, Model m) {
 		
@@ -31,4 +34,12 @@ public class FastPassController {
 		return "console";
 	}
 
+	public String getFastPassCustomerDetailsFallback(@RequestParam String fastpassid, Model m) {
+		System.out.println("Fallback Called getFastPassCustomerDetailsFallback. Set default customer.");
+		FastPassCustomer c= new FastPassCustomer();
+		c.setFastPassId("1");
+		c.setCustomerFullName("default");
+		m.addAttribute("customer", c);
+		return "console";
+	}
 }
