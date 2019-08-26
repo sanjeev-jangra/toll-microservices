@@ -13,12 +13,9 @@ import org.springframework.web.client.RestTemplate;
 
 import com.netflix.hystrix.contrib.javanica.annotation.HystrixCommand;
 
-//@RibbonClient(name="fastpass-service-local")
+@RibbonClient(name="pluralsight-fastpass-service", configuration=TollClientRoutingConfig.class)
 @Controller
 public class FastPassController {
-	
-	@Autowired
-	private RestTemplate restTemplate;
 	
 	@LoadBalanced
 	@Bean
@@ -26,22 +23,26 @@ public class FastPassController {
 		return builder.build();
 	}
 	
-	@HystrixCommand(fallbackMethod="getFastPassCustomerDetailsFallback")
+	@Autowired
+	private RestTemplate restTemplate;
+	
+	@HystrixCommand(fallbackMethod="getFastPassCustomerDetailsBackup")
 	@RequestMapping(path="/customerdetails", params={"fastpassid"})
 	public String getFastPassCustomerDetails(@RequestParam String fastpassid, Model m) {
 		
-		FastPassCustomer c = restTemplate.getForObject("http://fastpass-service-local/fastpass?fastpassid=" + fastpassid, FastPassCustomer.class);
+		FastPassCustomer c = restTemplate.getForObject("http://pluralsight-fastpass-service/fastpass?fastpassid=" + fastpassid, FastPassCustomer.class);
 		System.out.println("retrieved customer details");
 		m.addAttribute("customer", c);
 		return "console";
 	}
-
-	public String getFastPassCustomerDetailsFallback(@RequestParam String fastpassid, Model m) {
-		System.out.println("Fallback Called getFastPassCustomerDetailsFallback. Set default customer.");
-		FastPassCustomer c= new FastPassCustomer();
-		c.setFastPassId("1");
-		c.setCustomerFullName("default");
+	
+	public String getFastPassCustomerDetailsBackup(@RequestParam String fastpassid, Model m) {
+		
+		FastPassCustomer c = new FastPassCustomer();
+		c.setFastPassId(fastpassid);
+		System.out.println("Fallback operation called");
 		m.addAttribute("customer", c);
 		return "console";
 	}
+
 }
